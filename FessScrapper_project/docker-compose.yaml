@@ -1,0 +1,20 @@
+
+services:
+  scrapper-mongodb:
+    image: mongo
+    container_name: scrapper-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - /my/own/datadir:/data/db
+
+  web:
+    build: .
+    container_name: fess-scrapper-api
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+    depends_on:
+      - scrapper-mongodb
