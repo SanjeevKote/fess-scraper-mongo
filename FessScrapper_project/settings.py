@@ -169,22 +169,22 @@ LOGGING = {
     },
     'loggers': {
         'django': {
-            'handlers': ['file', 'console'],
+            'handlers': ['file'],
             'level': 'ERROR',
             'propagate': True,
         },
-        'django.db.backends': {
-            'handlers': ['file'],
-            'level': 'ERROR',
-            'propagate': False,
-        },
-        'django.request': {
-            'handlers': ['file'],
-            'level': 'ERROR',
-            'propagate': False,
-        },
+        # 'django.db.backends': {
+        #     'handlers': ['file'],
+        #     'level': 'ERROR',
+        #     'propagate': False,
+        # },
+        # 'django.request': {
+        #     'handlers': ['file'],
+        #     'level': 'ERROR',
+        #     'propagate': False,
+        # },
         'FessApp.views.guardian': {
-            'handlers': ['file', 'console'],
+            'handlers': ['file'],
             'level': 'DEBUG',
             'propagate': True,
         },

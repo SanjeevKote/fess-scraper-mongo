@@ -1,6 +1,9 @@
 from urllib.parse import urlparse
 from datetime import datetime
 import os
+import logging
+logger = logging.getLogger(__name__)
+pythonfile_name = os.path.basename(__file__)
 
 def generate_filname(link,collection_name):
     parsed_url = urlparse(link)
@@ -17,7 +20,8 @@ def generate_filname(link,collection_name):
 
     #Construct file_path
     path = os.getenv('FILE_PATH')
-    file_path = os.path.join(path, f"{collection_name}/{path_parts[1]}/{path_parts[2]}/{Date}")
-    print('path',file_path)
+    file_path = os.path.join(path, f"{collection_name}\{path_parts[1]}\{path_parts[2]}\{Date}")
+    logger.info("Python Filename:,%s ",pythonfile_name, "Publication Date: %s",file_path)
+    print(pythonfile_name,file_path)
 
     return file_name,file_path
