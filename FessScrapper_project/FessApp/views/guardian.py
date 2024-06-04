@@ -106,7 +106,7 @@ def Fess_Gardian_Post(request):
             except ValueError:
                 try:
                     # If parsing using '%d %B %Y' fails, try parsing using '%Y-%m-%d'
-                    publication_date = datetime.strptime(publication_date, "%Y-%m-%d").date().isoformat()
+                    publication_date = datetime.strptime(publication_date, "%d %b %Y").date().isoformat()
                 except ValueError:
                     return Response("Failed to parse publication date", status=status.HTTP_400_BAD_REQUEST)
 

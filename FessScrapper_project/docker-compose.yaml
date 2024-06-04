@@ -18,3 +18,5 @@ services:
       - "8000:8000"
     depends_on:
       - scrapper-mongodb
+    environment:
+      - MONGODB_URI=mongodb://host.docker.internal:27017/
