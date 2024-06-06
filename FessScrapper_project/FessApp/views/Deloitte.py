@@ -38,14 +38,7 @@ def Fetch_Content(link,collection_name):
         # # Parse the HTML content
         soup = BeautifulSoup(response.text, 'html.parser')
          # Extract the title of the webpage
-        
-        # Find all <strong> tags
-        strong_tags = soup.find_all('strong')
-
-        # Check if there are at least 13 <strong> tags
-        if len(strong_tags) >= 13:
-            # Get the 13th <strong> tag (index 12)
-            title = strong_tags[12].get_text()
+        title = soup.title.get_text() if soup.title else "No title found"      
                
         # Find all <p> tags in the webpage
         paragraphs = soup.find_all('p')

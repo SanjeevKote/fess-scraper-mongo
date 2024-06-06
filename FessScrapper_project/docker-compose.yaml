@@ -1,13 +1,5 @@
 
 services:
-  scrapper-mongodb:
-    image: mongo
-    container_name: scrapper-mongodb
-    ports:
-      - "27017:27017"
-    volumes:
-      - /my/own/datadir:/data/db
-
   web:
     build: .
     container_name: fess-scrapper-api
@@ -18,5 +10,11 @@ services:
       - "8000:8000"
     depends_on:
       - scrapper-mongodb
-    environment:
-      - MONGODB_URI=mongodb://host.docker.internal:27017/
+
+  scrapper-mongodb:
+    image: mongo
+    container_name: scrapper-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - /my/own/datadir:/data/db

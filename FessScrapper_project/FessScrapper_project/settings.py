@@ -153,7 +153,7 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': os.path.join(LOG_DIR, 'myapp.log'),
+            'filename': os.path.join(LOG_DIR, 'scrapper.log'),
             'formatter': 'simple',
         },
         'console': {

@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from django.db import connection
 from .Filename_generator import generate_filname
 from FessApp.mangodb import db
+from django.views.decorators.csrf import csrf_exempt
 import logging
 logger = logging.getLogger(__name__)
 
@@ -84,12 +85,17 @@ def Fetch_Content(link,collection_name):
             else:
                 f.write("Publication Date not found\n")
             f.write("\n" + text)
+        if publication_date:
+            logger.info("Publication Date: %s", publication_date)
+        else:
+            logger.warning("Publication Date not found")
     else:
         logger.error("Failed to fetch the webpage: %s", response.status_code)
     return publication_date, title, text, full_path
 
 
 # @api_view(['GET','POST'])
+@csrf_exempt
 def Fess_Gardian_Post(request):
     """
     List all instances of MyModel.
@@ -98,22 +104,24 @@ def Fess_Gardian_Post(request):
         collection_name = request.data.get("collectionName")
         link = request.data.get("link")
         publication_date, title, text , full_path= Fetch_Content(link,collection_name)
-
+        # Get the current date
+        current_date = date.today()
         if publication_date:
             try:
                 # Try parsing the date string using the format '%d %B %Y'
                 publication_date = datetime.strptime(publication_date, '%d %B %Y').date().isoformat()
             except ValueError:
                 try:
+                    print('publication_date',publication_date)
                     # If parsing using '%d %B %Y' fails, try parsing using '%Y-%m-%d'
                     publication_date = datetime.strptime(publication_date, "%d %b %Y").date().isoformat()
                 except ValueError:
                     return Response("Failed to parse publication date", status=status.HTTP_400_BAD_REQUEST)
 
         if publication_date and title and text:
-            # corrected_path = full_path.replace("\\", "/")
-            #     # Normalize the path
-            # full_path = os.path.normpath(corrected_path)
+            corrected_path = full_path.replace("\\", "/")
+                # Normalize the path
+            full_path = os.path.normpath(corrected_path)
             Gardian_rec ={'article_link':link,
                   'article_title':title, 
                   'article_publish_date':publication_date,
