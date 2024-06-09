@@ -31,6 +31,7 @@ def Fetch_Content(link,collection_name):
     
     # Send a GET request to the URL
     response = requests.get(url)
+    logger.info("Article link: %s", url)
     # Check if the request was successful (status code 200)
     if response.status_code == 200:
         # Parse the HTML content
@@ -88,6 +89,10 @@ def Fetch_Content(link,collection_name):
             else:
                 f.write("Publication Date not found\n")
             f.write("\n" + text)
+        if publication_date:
+            logger.info("Publication Date: %s", publication_date)
+        else:
+            logger.warning("Publication Date not found")
     else:
         logger.error("Failed to fetch the webpage: %s", response.status_code)
     return publication_date, title, text, full_path
@@ -116,13 +121,15 @@ def Fess_Sharedvalue_Post(request):
 
         if publication_date and title and text:
             full_path = full_path.replace("\\\\", "\\")
-            Gardian_rec ={'article_link':link,
+            logger.info("Article file path: %s", full_path)
+            SharedValue_rec ={'article_link':link,
                   'article_title':title, 
                   'article_publish_date':publication_date,
                     'article_file_path':full_path}
                 # Access collection of the database 
             mycollection=db[collection_name]
-            Gardian_rec = mycollection.insert_one(Gardian_rec) 
+            SharedValue_rec = mycollection.insert_one(SharedValue_rec) 
+            logger.info("%s data saved successfully",collection_name)
 
             try:
                 # fess_model_instance.save()

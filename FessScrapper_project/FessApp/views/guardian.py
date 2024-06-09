@@ -1,12 +1,11 @@
 from django.shortcuts import render
 
 # Create your views here.
-from rest_framework.decorators import api_view
 from rest_framework.response import Response
 import requests
 from bs4 import BeautifulSoup
 from rest_framework import status
-from datetime import datetime,date
+from datetime import datetime
 import re
 import os
 from dotenv import load_dotenv
@@ -31,6 +30,7 @@ def Fetch_Content(link,collection_name):
     
     # Send a GET request to the URL
     response = requests.get(url)
+    logger.info("Article link: %s", url)
     # Check if the request was successful (status code 200)
     if response.status_code == 200:
         # Parse the HTML content
@@ -78,6 +78,7 @@ def Fetch_Content(link,collection_name):
         
         # Save the title, publication date, and text content to a file
         full_path=os.path.join(file_path, file_name + '.txt')
+        
         with open(os.path.join(file_path, file_name + '.txt'), 'w', encoding='utf-8') as f:
             f.write(f"Title: {title}\n")
             if publication_date:
@@ -104,15 +105,13 @@ def Fess_Gardian_Post(request):
         collection_name = request.data.get("collectionName")
         link = request.data.get("link")
         publication_date, title, text , full_path= Fetch_Content(link,collection_name)
-        # Get the current date
-        current_date = date.today()
+  
         if publication_date:
             try:
                 # Try parsing the date string using the format '%d %B %Y'
                 publication_date = datetime.strptime(publication_date, '%d %B %Y').date().isoformat()
             except ValueError:
                 try:
-                    print('publication_date',publication_date)
                     # If parsing using '%d %B %Y' fails, try parsing using '%Y-%m-%d'
                     publication_date = datetime.strptime(publication_date, "%d %b %Y").date().isoformat()
                 except ValueError:
@@ -122,16 +121,18 @@ def Fess_Gardian_Post(request):
             corrected_path = full_path.replace("\\", "/")
                 # Normalize the path
             full_path = os.path.normpath(corrected_path)
-            print('before guardian insert')
-            Gardian_rec ={'article_link':link,
-                  'article_title':title, 
-                  'article_publish_date':publication_date,
-                    'article_file_path':full_path}
-                # Access collection of the database 
-            mycollection=db[collection_name]
-            Gardian_rec = mycollection.insert_one(Gardian_rec) 
-            print('after guardian data saved')
+            logger.info("Article file path: %s", full_path)
             try:
+                Gardian_rec ={'article_link':link,
+                        'article_title':title, 
+                        'article_publish_date':publication_date,
+                        'article_file_path':full_path}
+                    # Access collection of the database 
+                mycollection=db[collection_name]
+                Gardian_rec = mycollection.insert_one(Gardian_rec) 
+                logger.info("%s data saved successfully",collection_name)
+
+
                 # fess_model_instance.save()
                 return full_path
             except Exception as e:

@@ -143,8 +143,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOG_DIR = os.path.join(BASE_DIR, 'logs')
 os.makedirs(LOG_DIR, exist_ok=True)
 
-print("LOG_DIR:", LOG_DIR)
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -162,7 +160,7 @@ LOGGING = {
     },
     'formatters': {
         'simple': {
-            'format': '{levelname} {asctime} {module} {message}',
+            'format': '{levelname} {asctime} {message}',
             'style': '{',
         },
     },

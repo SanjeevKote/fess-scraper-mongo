@@ -14,6 +14,8 @@ from django.db import connection
 from .Filename_generator import generate_filname
 from FessApp.mangodb import db
 from django.views.decorators.csrf import csrf_exempt
+import logging
+logger = logging.getLogger(__name__)
 
 # Load environment variables from .env file
 load_dotenv()
@@ -29,6 +31,7 @@ def Fetch_Content(link,collection_name):
     
     # Send a GET request to the URL
     response = requests.get(url)
+    logger.info("Article link: %s", url)
     # Check if the request was successful (status code 200)
     if response.status_code == 200:
         # Parse the HTML content
@@ -84,9 +87,9 @@ def Fetch_Content(link,collection_name):
                 f.write("Publication Date not found\n")
             f.write("\n" + text)
         if publication_date:
-            print("Publication Date:", publication_date)
+            logger.info("Publication Date: %s", publication_date)
         else:
-            print("Publication Date not found")
+            logger.warning("Publication Date not found")
     else:
         print("Failed to fetch the webpage:", response.status_code)
     return publication_date, title, text, full_path
@@ -118,13 +121,15 @@ def Fess_economist_Post(request):
             corrected_path = full_path.replace("\\", "/")
                 # Normalize the path
             full_path = os.path.normpath(corrected_path)
-            Gardian_rec ={'article_link':link,
+            logger.info("Article file path: %s", full_path)
+            economist_rec ={'article_link':link,
                   'article_title':title, 
                   'article_publish_date':publication_date,
                     'article_file_path':full_path}
                 # Access collection of the database 
             mycollection=db[collection_name]
-            Gardian_rec = mycollection.insert_one(Gardian_rec) 
+            economist_rec = mycollection.insert_one(economist_rec) 
+            logger.info("%s data saved successfully",collection_name)
 
             try:
                 # fess_model_instance.save()

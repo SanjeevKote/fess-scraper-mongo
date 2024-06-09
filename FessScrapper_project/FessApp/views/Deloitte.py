@@ -1,21 +1,18 @@
-from django.shortcuts import render
-
 # Create your views here.
-from rest_framework.decorators import api_view
 from rest_framework.response import Response
 import requests
 from bs4 import BeautifulSoup
 from rest_framework import status
 from datetime import datetime,date
-import re
 import os
 from dotenv import load_dotenv
-from urllib.parse import urlparse
 from django.db import connection
 from FessApp.mangodb import db
 from .Filename_generator import generate_filname
 from .Date_deloitte import get_date
 from django.views.decorators.csrf import csrf_exempt
+import logging
+logger = logging.getLogger(__name__)
 
 # Load environment variables from .env file
 load_dotenv()
@@ -23,18 +20,19 @@ load_dotenv()
 def Fetch_Content(link,collection_name):
 
     file_name,file_path=generate_filname(link,collection_name)
-    print('file_path',file_path)
+
     os.makedirs(file_path, exist_ok=True)
     # URL of the webpage you want to read
     url=link
     
     # Send a GET request to the URL
     response = requests.get(url)
+    logger.info("Article link: %s", url)
     # Check if the request was successful (status code 200)
     if response.status_code == 200:
 
         publication_date = get_date(url)
-
+        logger.info("Article publish date: %s", publication_date)
         # # Parse the HTML content
         soup = BeautifulSoup(response.text, 'html.parser')
          # Extract the title of the webpage
@@ -53,6 +51,7 @@ def Fetch_Content(link,collection_name):
 
         # Save the title, publication date, and text content to a file
         full_path=os.path.join(file_path, file_name + '.txt')
+        
         with open(os.path.join(file_path, file_name + '.txt'), 'w', encoding='utf-8') as f:
             f.write(f"Title: {title}\n")
             if publication_date:
@@ -60,12 +59,9 @@ def Fetch_Content(link,collection_name):
             else:
                 f.write("Publication Date not found\n")
             f.write("\n" + text)
-        if publication_date:
-            print("Publication Date:", publication_date)
-        else:
-            print("Publication Date not found")
+
     else:
-        print("Failed to fetch the webpage:", response.status_code)
+        logger.error("Failed to fetch the webpage: %s", response.status_code)
     return publication_date, title, text, full_path
 
 
@@ -96,13 +92,18 @@ def Fess_Deloitte_Post(request):
 
 
         if publication_date and title and text:
+            corrected_path = full_path.replace("\\", "/")
+                # Normalize the path
+            full_path = os.path.normpath(corrected_path)
+            logger.info("Article file path: %s", full_path)
             Deloitte_rec ={'article_link':link,
                   'article_title':title, 
                   'article_publish_date':publication_date,
                     'article_file_path':full_path}
                 # Access collection of the database 
             mycollection=db[collection_name]
-            Gardian_rec = mycollection.insert_one(Deloitte_rec) 
+            Deloitte_rec = mycollection.insert_one(Deloitte_rec) 
+            logger.info("%s data saved successfully",collection_name)
 
             try:
                 # fess_model_instance.save()

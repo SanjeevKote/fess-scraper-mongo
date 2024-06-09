@@ -1,7 +1,5 @@
-from django.shortcuts import render
 
 # Create your views here.
-from rest_framework.decorators import api_view
 from rest_framework.response import Response
 import requests
 from bs4 import BeautifulSoup
@@ -10,46 +8,26 @@ from datetime import datetime,date
 import re
 import os
 from dotenv import load_dotenv
-from urllib.parse import urlparse
+from .Filename_generator import generate_filname
 from django.db import connection
-import pymongo
-from pymongo import MongoClient 
-from django.http import JsonResponse
 from FessApp.mangodb import db
 from django.views.decorators.csrf import csrf_exempt
+import logging
+logger = logging.getLogger(__name__)
 
 # Load environment variables from .env file
 load_dotenv()
 
-def generate_filname(link,collection_name):
-    parsed_url = urlparse(link)
-    path_parts = parsed_url.path.split('/')
-    # Get the current date and time
-    now = datetime.now()
-
-    # Format it as a string
-    timestamp_str = now.strftime("%Y-%m-%d %H_%M_%S")
-    Date=now.strftime("%Y_%m_%d")
-    environment = os.getenv('ENV')
-
-    file_name = f"{collection_name}_{path_parts[2]}_{timestamp_str}"
-
-    #Construct file_path
-    path = os.getenv('FILE_PATH')
-    file_path = os.path.join(path, f"{collection_name}\{path_parts[1]}\{path_parts[2]}\{Date}")
-    print('path',file_path)
-
-    return file_name,file_path
     
 def Fetch_Content(link,collection_name):
     file_name,file_path=generate_filname(link,collection_name)
-    print('file_path',file_path)
     os.makedirs(file_path, exist_ok=True)
     # URL of the webpage you want to read
     url=link
     
     # Send a GET request to the URL
     response = requests.get(url)
+    logger.info("Article link: %s", url)
     # Check if the request was successful (status code 200)
     if response.status_code == 200:
         # Parse the HTML content
@@ -105,11 +83,11 @@ def Fetch_Content(link,collection_name):
                 f.write("Publication Date not found\n")
             f.write("\n" + text)
         if publication_date:
-            print("Publication Date:", publication_date)
+            logger.info("Publication Date: %s", publication_date)
         else:
-            print("Publication Date not found")
+            logger.warning("Publication Date not found")
     else:
-        print("Failed to fetch the webpage:", response.status_code)
+        logger.error("Failed to fetch the webpage: %s", response.status_code)
     return publication_date, title, text, full_path
 
 
@@ -136,15 +114,21 @@ def Fess_Sodalitas_Post(request):
                     return Response("Failed to parse publication date", status=status.HTTP_400_BAD_REQUEST)
 
         if publication_date and title and text:
-            Gardian_rec ={'article_link':link,
-                  'article_title':title, 
-                  'article_publish_date':publication_date,
-                    'article_file_path':full_path}
-                # Access collection of the database 
-            mycollection=db[collection_name]
-            Gardian_rec = mycollection.insert_one(Gardian_rec) 
-
+            corrected_path = full_path.replace("\\", "/")
+                # Normalize the path
+            full_path = os.path.normpath(corrected_path)
+            logger.info("Article file path: %s", full_path)
             try:
+                sodalitas_rec ={'article_link':link,
+                    'article_title':title, 
+                    'article_publish_date':publication_date,
+                        'article_file_path':full_path}
+                    # Access collection of the database 
+                mycollection=db[collection_name]
+                sodalitas_rec = mycollection.insert_one(sodalitas_rec) 
+                logger.info("%s data saved successfully",collection_name)
+
+
                 # fess_model_instance.save()
                 return Response({
                     "message": "Data successfully saved",

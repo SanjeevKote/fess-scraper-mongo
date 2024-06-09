@@ -13,11 +13,17 @@ def generate_filname(link,collection_name):
     Date=now.strftime("%Y_%m_%d")
 
 
-    file_name = f"{collection_name}_{path_parts[2]}_{timestamp_str}"
-
+    file_name = f"{collection_name}_{path_parts[1]}_{timestamp_str}"
+    level1='level1'
+    level2='level2'
     #Construct file_path
     path = os.getenv('FILE_PATH')
-    file_path = os.path.join(path, f"{collection_name}/{path_parts[1]}/{path_parts[2]}/{Date}")
+    print('path_parts[1]',path_parts[1])
+    print('path_parts[2]',path_parts[2])
+    if path_parts[1] and path_parts[2]:
+        file_path = os.path.join(path, f"{collection_name}/{path_parts[1]}/{path_parts[2]}/{Date}")
+    else:
+        file_path = os.path.join(path, f"{collection_name}/{level1}/{level2}/{Date}")
     print('path',file_path)
 
     return file_name,file_path
