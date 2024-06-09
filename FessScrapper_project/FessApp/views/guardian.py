@@ -122,6 +122,7 @@ def Fess_Gardian_Post(request):
             corrected_path = full_path.replace("\\", "/")
                 # Normalize the path
             full_path = os.path.normpath(corrected_path)
+            print('before guardian insert')
             Gardian_rec ={'article_link':link,
                   'article_title':title, 
                   'article_publish_date':publication_date,
@@ -129,7 +130,7 @@ def Fess_Gardian_Post(request):
                 # Access collection of the database 
             mycollection=db[collection_name]
             Gardian_rec = mycollection.insert_one(Gardian_rec) 
-
+            print('after guardian data saved')
             try:
                 # fess_model_instance.save()
                 return full_path

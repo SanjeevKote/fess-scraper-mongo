@@ -2,10 +2,10 @@
 
 import pymongo
 
-MONGODB_HOST = 'mongodb://host.docker.internal:27017/' #'scrapper-mongodb'
-#MONGODB_HOST = 'localhost'
+#MONGODB_HOST = 'mongodb://host.docker.internal:27017/' #'scrapper-mongodb'
+MONGODB_HOST = 'mongodb://54.37.76.85:27017/'
 MONGODB_PORT = 27017
-MONGODB_DB = 'scaperDatabase'
+MONGODB_DB = 'scrapperDatabase'
 
 client = pymongo.MongoClient(MONGODB_HOST, MONGODB_PORT)
 db = client[MONGODB_DB]
