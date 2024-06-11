@@ -12,6 +12,8 @@ from .sodalitas import Fess_Sodalitas_Post
 from .hbr import Fess_hbr_Post
 from .economist import Fess_economist_Post
 from django.views.decorators.csrf import csrf_exempt
+from .docker_copy import docker_copy_from_container
+import os
 
 # Load environment variables from .env file
 
@@ -36,6 +38,9 @@ def Fess_split_Post(request):
             full_path=Fess_hbr_Post(request)
         elif 'economist' in collection_name:
             full_path=Fess_economist_Post(request)
+
+
+        docker_copy_from_container("fess-scrapper-api", full_path, os.getenv('SERVER_FILE_PATH'))
         return Response({
                     "message": "Data successfully saved",
                     "file_path": full_path

@@ -9,8 +9,8 @@ def generate_filname(link,collection_name):
     now = datetime.now()
 
     # Format it as a string
-    timestamp_str = now.strftime("%Y-%m-%d %H_%M_%S")
-    Date=now.strftime("%Y_%m_%d")
+    timestamp_str = now.strftime("%Y%m%d%H%M%S")
+    Date=now.strftime("%Y%m%d")
 
 
     file_name = f"{collection_name}_{path_parts[1]}_{timestamp_str}"
