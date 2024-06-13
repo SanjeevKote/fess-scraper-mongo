@@ -2,28 +2,31 @@ from urllib.parse import urlparse
 from datetime import datetime
 import os
 
-def generate_filname(link,collection_name):
+def generate_filname(link, collection_name, publication_date):
     parsed_url = urlparse(link)
     path_parts = parsed_url.path.split('/')
+
     # Get the current date and time
     now = datetime.now()
-
     # Format it as a string
     timestamp_str = now.strftime("%Y%m%d%H%M%S")
-    Date=now.strftime("%Y%m%d")
 
+    # Extract the date from the provided publication date
+    Date = publication_date
+    print(Date)
 
-    file_name = f"{collection_name}_{path_parts[1]}_{timestamp_str}"
-    level1='level1'
-    level2='level2'
-    #Construct file_path
+    # Construct the base file name
+    file_name = f"{collection_name}_{timestamp_str}"
+    level1 = 'level1'
+    level2 = 'level2'
+
+    # Construct the file path
     path = os.getenv('FILE_PATH')
-    print('path_parts[1]',path_parts[1])
-    print('path_parts[2]',path_parts[2])
-    if path_parts[1] and path_parts[2]:
-        file_path = os.path.join(path, f"{collection_name}/{path_parts[1]}/{path_parts[2]}/{Date}")
-    else:
-        file_path = os.path.join(path, f"{collection_name}/{level1}/{level2}/{Date}")
-    print('path',file_path)
+    # if len(path_parts) >= 3:
+    file_path = os.path.join(path, f"{collection_name}/{Date}")
+    # else:
+    #     file_path = os.path.join(path, f"{collection_name}/{level1}/{level2}/{Date}")
 
-    return file_name,file_path
+    print('path', file_path)
+
+    return file_name, file_path

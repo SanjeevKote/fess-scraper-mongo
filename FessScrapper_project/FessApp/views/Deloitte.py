@@ -1,71 +1,67 @@
-# Create your views here.
 from rest_framework.response import Response
 import requests
 from bs4 import BeautifulSoup
 from rest_framework import status
-from datetime import datetime,date
 import os
 from dotenv import load_dotenv
 from django.db import connection
 from FessApp.mangodb import db
 from .Filename_generator import generate_filname
-from .Date_deloitte import get_date
 from django.views.decorators.csrf import csrf_exempt
 import logging
+
 logger = logging.getLogger(__name__)
 
 # Load environment variables from .env file
 load_dotenv()
 
-def Fetch_Content(link,collection_name):
 
-    file_name,file_path=generate_filname(link,collection_name)
+def Fetch_Content(link, collection_name, articlePublishedDate):
+    converted_date = articlePublishedDate.replace("-", "")
+    file_name, file_path = generate_filname(link, collection_name, converted_date)
 
     os.makedirs(file_path, exist_ok=True)
+    
     # URL of the webpage you want to read
-    url=link
+    url = link
     
     # Send a GET request to the URL
     response = requests.get(url)
     logger.info("Article link: %s", url)
+    
     # Check if the request was successful (status code 200)
     if response.status_code == 200:
-
-        publication_date = get_date(url)
-        logger.info("Article publish date: %s", publication_date)
-        # # Parse the HTML content
+        # Parse the HTML content
         soup = BeautifulSoup(response.text, 'html.parser')
-         # Extract the title of the webpage
-        title = soup.title.get_text() if soup.title else "No title found"      
+        
+        # Extract the title of the webpage
+        title = soup.title.get_text() if soup.title else "No title found"
                
         # Find all <p> tags in the webpage
         paragraphs = soup.find_all('p')
         
         # Extract text from <p> tags
-        wordings = []
-        for paragraph in paragraphs:
-            wordings.append(paragraph.get_text())
+        wordings = [paragraph.get_text() for paragraph in paragraphs]
         
         # Combine the wordings into a single string
         text = '\n'.join(wordings)      
-
-        # Save the title, publication date, and text content to a file
-        full_path=os.path.join(file_path, file_name + '.txt')
         
-        with open(os.path.join(file_path, file_name + '.txt'), 'w', encoding='utf-8') as f:
+        # Save the title, publication date, and text content to a file
+        full_path = os.path.join(file_path, file_name + '.txt')
+        
+        with open(full_path, 'w', encoding='utf-8') as f:
             f.write(f"Title: {title}\n")
-            if publication_date:
-                f.write(f"Publication Date: {publication_date}\n")
-            else:
-                f.write("Publication Date not found\n")
+            f.write(f"Publication Date: {articlePublishedDate}\n" if articlePublishedDate else "Publication Date not found\n")
             f.write("\n" + text)
 
     else:
         logger.error("Failed to fetch the webpage: %s", response.status_code)
-    return publication_date, title, text, full_path
+    
+    return articlePublishedDate, title, text, full_path
 
 
 # @api_view(['GET','POST'])
+@csrf_exempt
 def Fess_Deloitte_Post(request):
     """
     List all instances of MyModel.
@@ -73,37 +69,26 @@ def Fess_Deloitte_Post(request):
     if request.method == 'POST':
         collection_name = request.data.get("collectionName")
         link = request.data.get("link")
-        publication_date, title, text , full_path= Fetch_Content(link,collection_name)
-        # Get the current date
-        current_date = date.today()
-        if publication_date:
-            try:
-                # Try parsing the date string using the format '%d %B %Y'
-                publication_date = datetime.strptime(publication_date, '%d %B %Y').date().isoformat()
-            except ValueError:
-                try:
-                    # If parsing using '%d %B %Y' fails, try parsing using '%Y-%m-%d'
-                    publication_date = datetime.strptime(publication_date, "%Y-%m-%d").date().isoformat()
-                except ValueError:                    
-                    try:
-                        publication_date = date_obj = datetime.strptime(publication_date, '%d %b. %Y').date().isoformat()
-                    except ValueError:
-                        return Response("Failed to parse publication date", status=status.HTTP_400_BAD_REQUEST)
-
-
+        articlePublishedDate = request.data.get("articlePublishedDate")
+        publication_date, title, text, full_path = Fetch_Content(link, collection_name, articlePublishedDate)
+       
         if publication_date and title and text:
+            # Normalize the path
             corrected_path = full_path.replace("\\", "/")
-                # Normalize the path
             full_path = os.path.normpath(corrected_path)
             logger.info("Article file path: %s", full_path)
-            Deloitte_rec ={'article_link':link,
-                  'article_title':title, 
-                  'article_publish_date':publication_date,
-                    'article_file_path':full_path}
-                # Access collection of the database 
-            mycollection=db[collection_name]
+            
+            Deloitte_rec = {
+                'article_link': link,
+                'article_title': title, 
+                'article_publish_date': publication_date,
+                'article_file_path': full_path
+            }
+            
+            # Access collection of the database 
+            mycollection = db[collection_name]
             Deloitte_rec = mycollection.insert_one(Deloitte_rec) 
-            logger.info("%s data saved successfully",collection_name)
+            logger.info("%s data saved successfully", collection_name)
 
             try:
                 # fess_model_instance.save()
@@ -117,9 +102,3 @@ def Fess_Deloitte_Post(request):
 
         else:
             return Response("Failed to fetch content from the provided link", status=status.HTTP_400_BAD_REQUEST)
-        
-        
-  
-
-    
-

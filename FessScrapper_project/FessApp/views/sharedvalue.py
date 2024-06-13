@@ -21,17 +21,14 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 
-def Fetch_Content(link,collection_name):
-
-    file_name,file_path=generate_filname(link,collection_name)
-
-    os.makedirs(file_path, exist_ok=True)
+def Fetch_Content(link, collection_name, articlePublishedDate):
     # URL of the webpage you want to read
-    url=link
+    url = link
     
     # Send a GET request to the URL
     response = requests.get(url)
     logger.info("Article link: %s", url)
+    
     # Check if the request was successful (status code 200)
     if response.status_code == 200:
         # Parse the HTML content
@@ -39,16 +36,6 @@ def Fetch_Content(link,collection_name):
         
         # Extract the title of the webpage
         title = soup.title.get_text() if soup.title else "No title found"
-        
-        # Extract the publication date from <meta> tags
-        publication_date = None
-        
-        post_date_div = soup.find('div', class_='post-date')
-        if post_date_div:
-            post_date_div = post_date_div.get_text().strip()
-        # Remove the "Posted" part from the text
-        if post_date_div.startswith("Posted"):
-            post_date_div = post_date_div.replace("Posted", "").strip()
         
         # Find all <p> tags in the webpage
         paragraphs = soup.find_all('p')
@@ -60,42 +47,29 @@ def Fetch_Content(link,collection_name):
         
         # Combine the wordings into a single string
         text = '\n'.join(wordings)
-        # Attempt to find the publication date in various possible formats and locations
-        date_patterns = [
-            r'\b\d{1,2} [ADFJMNOS]\w* \d{4}\b',  # Example: 10 May 2024
-            r'\b\d{4}-\d{2}-\d{2}\b',            # Example: 2024-05-10
-            r'\b\d{2}-\d{2}-\d{4}\b',              # DD-MM-YYYY
-            r'\b\d{2}/\d{2}/\d{4}\b',              # DD/MM/YYYY
-            r'\b\d{2}-\d{2}-\d{2}\b',              # MM-DD-YYYY
-            r'\b\d{2}/\d{2}/\d{2}\b',              # MM/DD/YYYY
-            r'\b\d{2} [a-zA-Z]{3} \d{4}\b',        # DD MMM YYYY
-            r'\b[a-zA-Z]{3} \d{1,2}, \d{4}\b',     # MMM DD, YYYY
-            r'\b\d{1,2} [a-zA-Z]{3,} \d{4}\b',     # DD Month YYYY
-            r'\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\b'  # YYYY-MM-DDTHH:MM:SS
-        ]
-        for pattern in date_patterns:
-            date_match = re.search(pattern, response.text)
-            if date_match:
-                publication_date = date_match.group()
-                break
+        converted_date = articlePublishedDate.replace("-", "")
+        file_name, file_path = generate_filname(link, collection_name, converted_date)
+
+        os.makedirs(file_path, exist_ok=True)
         
         # Save the title, publication date, and text content to a file
-        full_path=os.path.join(file_path, file_name + '.txt')
+        full_path = os.path.join(file_path, file_name + '.txt')
 
         with open(os.path.join(file_path, file_name + '.txt'), 'w', encoding='utf-8') as f:
             f.write(f"Title: {title}\n")
-            if post_date_div:
-                f.write(f"Publication Date: {post_date_div}\n")
+            if articlePublishedDate:
+                f.write(f"Publication Date: {articlePublishedDate}\n")
             else:
                 f.write("Publication Date not found\n")
             f.write("\n" + text)
-        if publication_date:
-            logger.info("Publication Date: %s", publication_date)
+        if articlePublishedDate:
+            logger.info("Publication Date: %s", articlePublishedDate)
         else:
             logger.warning("Publication Date not found")
     else:
         logger.error("Failed to fetch the webpage: %s", response.status_code)
-    return publication_date, title, text, full_path
+    return articlePublishedDate, title, text, full_path
+
 
 
 # @api_view(['GET','POST'])
@@ -106,30 +80,24 @@ def Fess_Sharedvalue_Post(request):
     if request.method == 'POST':
         collection_name = request.data.get("collectionName")
         link = request.data.get("link")
-        publication_date, title, text , full_path= Fetch_Content(link,collection_name)
+        articlePublishedDate = request.data.get("articlePublishedDate")
+        publication_date, title, text, full_path = Fetch_Content(link, collection_name, articlePublishedDate)
 
-        if publication_date:
-            try:
-                # Try parsing the date string using the format '%d %B %Y'
-                publication_date = datetime.fromisoformat(publication_date)
-            except ValueError:
-                try:
-                    # If parsing using '%d %B %Y' fails, try parsing using '%Y-%m-%d'
-                    publication_date = datetime.strptime(publication_date, "%Y-%m-%d").date().isoformat()
-                except ValueError:
-                    return Response("Failed to parse publication date", status=status.HTTP_400_BAD_REQUEST)
-
-        if publication_date and title and text:
-            full_path = full_path.replace("\\\\", "\\")
+        if articlePublishedDate and title and text:
+            # full_path = full_path.replace("\\\\", "\\")
+            corrected_path = full_path.replace("\\", "/")
+            full_path = os.path.normpath(corrected_path)
             logger.info("Article file path: %s", full_path)
-            SharedValue_rec ={'article_link':link,
-                  'article_title':title, 
-                  'article_publish_date':publication_date,
-                    'article_file_path':full_path}
-                # Access collection of the database 
-            mycollection=db[collection_name]
+            SharedValue_rec = {
+                'article_link': link,
+                'article_title': title, 
+                'article_publish_date': publication_date,
+                'article_file_path': full_path
+            }
+            
+            mycollection = db[collection_name]
             SharedValue_rec = mycollection.insert_one(SharedValue_rec) 
-            logger.info("%s data saved successfully",collection_name)
+            logger.info("%s data saved successfully", collection_name)
 
             try:
                 # fess_model_instance.save()
@@ -142,9 +110,6 @@ def Fess_Sharedvalue_Post(request):
 
         else:
             return Response("Failed to fetch content from the provided link", status=status.HTTP_400_BAD_REQUEST)
-        
-        
-  
 
     
 
