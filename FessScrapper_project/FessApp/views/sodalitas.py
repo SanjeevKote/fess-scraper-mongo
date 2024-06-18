@@ -90,13 +90,14 @@ def fess_sodalitas_post(request):
                 logger.info("Article file path: %s", full_path)
                 
                 sodalitas_rec = {
+                    'article_sourceSite':collection_name,
                     'article_link': link,
                     'article_title': title,
                     'article_publish_date': publication_date,
                     'article_file_path': full_path
                 }
                 
-                mycollection = db[collection_name]
+                mycollection = db['articles']
                 mycollection.insert_one(sodalitas_rec)
                 logger.info("%s data saved successfully", collection_name)
                 

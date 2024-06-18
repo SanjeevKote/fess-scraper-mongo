@@ -84,6 +84,7 @@ def Fess_hbr_Post(request):
             try:
                 logger.info("Article file path: %s", full_path)
                 hbr_rec = {
+                    'article_sourceSite':collection_name,
                     'article_link': link,
                     'article_title': title, 
                     'article_publish_date': publication_article_Date,
@@ -91,7 +92,7 @@ def Fess_hbr_Post(request):
                 }
                 
                 # Access collection of the database 
-                mycollection = db[collection_name]
+                mycollection = db['articles']
                 hbr_rec = mycollection.insert_one(hbr_rec) 
                 logger.info("%s data saved successfully", collection_name)
 

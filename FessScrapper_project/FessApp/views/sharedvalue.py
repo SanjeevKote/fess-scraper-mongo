@@ -89,13 +89,14 @@ def Fess_Sharedvalue_Post(request):
             full_path = os.path.normpath(corrected_path)
             logger.info("Article file path: %s", full_path)
             SharedValue_rec = {
+                'article_sourceSite':collection_name,
                 'article_link': link,
                 'article_title': title, 
                 'article_publish_date': publication_date,
                 'article_file_path': full_path
             }
             
-            mycollection = db[collection_name]
+            mycollection = db['articles']
             SharedValue_rec = mycollection.insert_one(SharedValue_rec) 
             logger.info("%s data saved successfully", collection_name)
 

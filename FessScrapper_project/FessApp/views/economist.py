@@ -89,13 +89,14 @@ def Fess_economist_Post(request):
             full_path = os.path.normpath(corrected_path)
             logger.info("Article file path: %s", full_path)
             economist_rec = {
+                'article_sourceSite':collection_name,
                 'article_link': link,
                 'article_title': title, 
                 'article_publish_date': publication_date,
                 'article_file_path': full_path
             }
             # Access collection of the database 
-            mycollection = db[collection_name]
+            mycollection = db['articles']
             economist_rec = mycollection.insert_one(economist_rec) 
             logger.info("%s data saved successfully", collection_name)
 

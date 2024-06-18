@@ -83,6 +83,7 @@ def Fess_Gardian_Post(request):
             
             try:
                 Gardian_rec = {
+                    'artcle_sourceSite':collection_name,
                     'article_link': link,
                     'article_title': title, 
                     'article_publish_date': publication_date,
@@ -90,7 +91,7 @@ def Fess_Gardian_Post(request):
                 }
                 
                 # Access collection of the database 
-                mycollection = db[collection_name]
+                mycollection = db['articles']
                 Gardian_rec = mycollection.insert_one(Gardian_rec) 
                 logger.info("%s data saved successfully", collection_name)
 
