@@ -4,9 +4,10 @@ import requests
 from bs4 import BeautifulSoup
 from rest_framework import status
 import os
+import re
 from dotenv import load_dotenv
 from django.db import connection
-from .Filename_generator import generate_filname
+from .Filename_generator import generate_filname_gurdian
 from FessApp.mangodb import db
 from django.views.decorators.csrf import csrf_exempt
 import logging
@@ -17,19 +18,16 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 
-def Fetch_Content(link, collection_name, articlePublishedDate):
-    converted_date = articlePublishedDate.replace("-", "")
-    file_name, file_path = generate_filname(link, collection_name, converted_date)
+def Fetch_Content(link,collection_name):
+
+    file_name,file_path=generate_filname_gurdian(link,collection_name)
 
     os.makedirs(file_path, exist_ok=True)
-    
     # URL of the webpage you want to read
-    url = link
+    url=link
     
     # Send a GET request to the URL
     response = requests.get(url)
-    logger.info("Article link: %s", url)
-    
     # Check if the request was successful (status code 200)
     if response.status_code == 200:
         # Parse the HTML content
@@ -38,29 +36,59 @@ def Fetch_Content(link, collection_name, articlePublishedDate):
         # Extract the title of the webpage
         title = soup.title.get_text() if soup.title else "No title found"
         
+        # Extract the publication date from <meta> tags
+        publication_date = None
+        meta_tags = soup.find_all('meta', attrs={'name': 'pub_date'})
+        for meta_tag in meta_tags:
+            if 'content' in meta_tag.attrs:
+                publication_date = meta_tag['content']
+                break
+        
         # Find all <p> tags in the webpage
         paragraphs = soup.find_all('p')
         
         # Extract text from <p> tags
-        wordings = [paragraph.get_text() for paragraph in paragraphs]
+        wordings = []
+        for paragraph in paragraphs:
+            wordings.append(paragraph.get_text())
         
         # Combine the wordings into a single string
         text = '\n'.join(wordings)
+        # Attempt to find the publication date in various possible formats and locations
+        date_patterns = [
+            r'\b\d{1,2} [ADFJMNOS]\w* \d{4}\b',  # Example: 10 May 2024
+            r'\b\d{4}-\d{2}-\d{2}\b',            # Example: 2024-05-10
+            r'\b\d{2}-\d{2}-\d{4}\b',              # DD-MM-YYYY
+            r'\b\d{2}/\d{2}/\d{4}\b',              # DD/MM/YYYY
+            r'\b\d{2}-\d{2}-\d{2}\b',              # MM-DD-YYYY
+            r'\b\d{2}/\d{2}/\d{2}\b',              # MM/DD/YYYY
+            r'\b\d{2} [a-zA-Z]{3} \d{4}\b',        # DD MMM YYYY
+            r'\b[a-zA-Z]{3} \d{1,2}, \d{4}\b',     # MMM DD, YYYY
+            r'\b\d{1,2} [a-zA-Z]{3,} \d{4}\b',     # DD Month YYYY
+            r'\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\b'  # YYYY-MM-DDTHH:MM:SS
+        ]
+        for pattern in date_patterns:
+            date_match = re.search(pattern, response.text)
+            if date_match:
+                publication_date = date_match.group()
+                break
         
         # Save the title, publication date, and text content to a file
-        full_path = os.path.join(file_path, file_name + '.txt')
-        
-        with open(full_path, 'w', encoding='utf-8') as f:
+        full_path=os.path.join(file_path, file_name + '.txt')
+        with open(os.path.join(file_path, file_name + '.txt'), 'w', encoding='utf-8') as f:
             f.write(f"Title: {title}\n")
-            f.write(f"Publication Date: {articlePublishedDate}\n" if articlePublishedDate else "Publication Date not found\n")
+            if publication_date:
+                f.write(f"Publication Date: {publication_date}\n")
+            else:
+                f.write("Publication Date not found\n")
             f.write("\n" + text)
-        
-        logger.info("Publication Date: %s", articlePublishedDate if articlePublishedDate else "Not found")
+        if publication_date:
+            logger.info("Publication Date: %s", publication_date)
+        else:
+            logger.warning("Publication Date not found")
     else:
         logger.error("Failed to fetch the webpage: %s", response.status_code)
-    
-    return articlePublishedDate, title, text, full_path
-
+    return publication_date, title, text, full_path
 
 # @api_view(['GET','POST'])
 @csrf_exempt
@@ -71,9 +99,9 @@ def Fess_Gardian_Post(request):
     if request.method == 'POST':
         collection_name = request.data.get("collectionName")
         link = request.data.get("link")
-        articlePublishedDate = request.data.get("articlePublishedDate")
+        #articlePublishedDate = request.data.get("articlePublishedDate")
         
-        publication_date, title, text, full_path = Fetch_Content(link, collection_name, articlePublishedDate)
+        publication_date, title, text, full_path = Fetch_Content(link, collection_name)
   
         if publication_date and title and text:
             # Normalize the path
