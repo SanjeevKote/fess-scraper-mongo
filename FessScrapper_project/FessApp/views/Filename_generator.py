@@ -21,7 +21,7 @@ def generate_filname(link, collection_name, publication_date):
     level2 = 'level2'
 
     # Construct the file path
-    path = os.getenv('FILE_PATH')
+    path = os.getenv('SERVER_FILE_PATH')
     # if len(path_parts) >= 3:
     file_path = os.path.join(path, f"{collection_name}/{Date}")
     # else:
@@ -47,7 +47,7 @@ def generate_filname_gurdian(link, collection_name):
     level2 = 'level2'
 
     # Construct the file path
-    path = os.getenv('FILE_PATH')
+    path = os.getenv('SERVER_FILE_PATH')
     # if len(path_parts) >= 3:
     file_path = os.path.join(path, f"{collection_name}")
     # else:
