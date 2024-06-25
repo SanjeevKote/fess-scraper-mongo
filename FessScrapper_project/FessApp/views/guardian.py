@@ -111,7 +111,7 @@ def Fess_Gardian_Post(request):
             
             try:
                 Gardian_rec = {
-                    'artcle_sourceSite':"The Guardian",
+                    'article_sourceSite':"The Guardian",
                     'article_link': link,
                     'article_title': title, 
                     'article_publish_date': publication_date,
