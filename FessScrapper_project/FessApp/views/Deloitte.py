@@ -79,11 +79,12 @@ def Fess_Deloitte_Post(request):
             logger.info("Article file path: %s", full_path)
             
             Deloitte_rec = {
-                'artcle_sourceSite':collection_name,
+                'artcle_sourceSite':"Deloitte",
                 'article_link': link,
                 'article_title': title, 
                 'article_publish_date': publication_date,
-                'article_file_path': full_path
+                'article_file_path': full_path,
+                'category' : []
             }
             
             # Access collection of the database 

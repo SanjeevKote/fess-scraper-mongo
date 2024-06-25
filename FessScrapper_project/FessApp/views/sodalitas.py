@@ -90,11 +90,12 @@ def fess_sodalitas_post(request):
                 logger.info("Article file path: %s", full_path)
                 
                 sodalitas_rec = {
-                    'article_sourceSite':collection_name,
+                    'article_sourceSite':"Fondazione Sodalitas",
                     'article_link': link,
                     'article_title': title,
                     'article_publish_date': publication_date,
-                    'article_file_path': full_path
+                    'article_file_path': full_path,
+                    'category' : []
                 }
                 
                 mycollection = db['articles']

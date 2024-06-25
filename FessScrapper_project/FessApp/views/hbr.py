@@ -84,11 +84,12 @@ def Fess_hbr_Post(request):
             try:
                 logger.info("Article file path: %s", full_path)
                 hbr_rec = {
-                    'article_sourceSite':collection_name,
+                    'article_sourceSite':"Harvard Business Review",
                     'article_link': link,
                     'article_title': title, 
                     'article_publish_date': publication_article_Date,
-                    'article_file_path': full_path
+                    'article_file_path': full_path,
+                    'category' : []
                 }
                 
                 # Access collection of the database 

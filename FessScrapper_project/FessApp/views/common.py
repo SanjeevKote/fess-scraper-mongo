@@ -3,6 +3,9 @@ from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+
+from FessApp.views.copy_docker_file import copy_file_from_container
+from FessApp.views.move_docker_file import move_file_from_container
 from .guardian import Fess_Gardian_Post
 from .Deloitte import Fess_Deloitte_Post
 from .sodalitas import fess_sodalitas_post
@@ -46,6 +49,15 @@ def Fess_split_Post(request):
                 logger.error('Invalid collection name: %s', collection_name)
                 return Response({"error": "Invalid collection name"}, status=status.HTTP_400_BAD_REQUEST)
             
+
+# Example usage
+# container_id = 'your_container_id'
+# source_path = '/path/in/container/file'
+# destination_path = '/path/on/host/file'
+
+            # copy_file_from_container("fess-scrapper-api", full_path, "D:/tmp")
+            #move_file_from_container("fess-scrapper-api", full_path, "D:/tmp")
+
             logger.info('Data successfully saved to %s', full_path)
             return Response({
                 "message": "Data successfully saved",

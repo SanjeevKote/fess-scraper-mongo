@@ -7,7 +7,7 @@ import os
 import re
 from dotenv import load_dotenv
 from django.db import connection
-from .Filename_generator import generate_filname_gurdian
+from .Filename_generator import generate_filname
 from FessApp.mangodb import db
 from django.views.decorators.csrf import csrf_exempt
 import logging
@@ -18,9 +18,9 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 
-def Fetch_Content(link,collection_name):
-
-    file_name,file_path=generate_filname_gurdian(link,collection_name)
+def Fetch_Content(link,collection_name, articlePublishedDate):
+    converted_date = articlePublishedDate.replace("-", "")
+    file_name,file_path=generate_filname(link,collection_name,converted_date)
 
     os.makedirs(file_path, exist_ok=True)
     # URL of the webpage you want to read
@@ -37,12 +37,12 @@ def Fetch_Content(link,collection_name):
         title = soup.title.get_text() if soup.title else "No title found"
         
         # Extract the publication date from <meta> tags
-        publication_date = None
-        meta_tags = soup.find_all('meta', attrs={'name': 'pub_date'})
-        for meta_tag in meta_tags:
-            if 'content' in meta_tag.attrs:
-                publication_date = meta_tag['content']
-                break
+        # publication_date = None
+        # meta_tags = soup.find_all('meta', attrs={'name': 'pub_date'})
+        # for meta_tag in meta_tags:
+        #     if 'content' in meta_tag.attrs:
+        #         publication_date = meta_tag['content']
+        #         break
         
         # Find all <p> tags in the webpage
         paragraphs = soup.find_all('p')
@@ -55,40 +55,40 @@ def Fetch_Content(link,collection_name):
         # Combine the wordings into a single string
         text = '\n'.join(wordings)
         # Attempt to find the publication date in various possible formats and locations
-        date_patterns = [
-            r'\b\d{1,2} [ADFJMNOS]\w* \d{4}\b',  # Example: 10 May 2024
-            r'\b\d{4}-\d{2}-\d{2}\b',            # Example: 2024-05-10
-            r'\b\d{2}-\d{2}-\d{4}\b',              # DD-MM-YYYY
-            r'\b\d{2}/\d{2}/\d{4}\b',              # DD/MM/YYYY
-            r'\b\d{2}-\d{2}-\d{2}\b',              # MM-DD-YYYY
-            r'\b\d{2}/\d{2}/\d{2}\b',              # MM/DD/YYYY
-            r'\b\d{2} [a-zA-Z]{3} \d{4}\b',        # DD MMM YYYY
-            r'\b[a-zA-Z]{3} \d{1,2}, \d{4}\b',     # MMM DD, YYYY
-            r'\b\d{1,2} [a-zA-Z]{3,} \d{4}\b',     # DD Month YYYY
-            r'\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\b'  # YYYY-MM-DDTHH:MM:SS
-        ]
-        for pattern in date_patterns:
-            date_match = re.search(pattern, response.text)
-            if date_match:
-                publication_date = date_match.group()
-                break
+        # date_patterns = [
+        #     r'\b\d{1,2} [ADFJMNOS]\w* \d{4}\b',  # Example: 10 May 2024
+        #     r'\b\d{4}-\d{2}-\d{2}\b',            # Example: 2024-05-10
+        #     r'\b\d{2}-\d{2}-\d{4}\b',              # DD-MM-YYYY
+        #     r'\b\d{2}/\d{2}/\d{4}\b',              # DD/MM/YYYY
+        #     r'\b\d{2}-\d{2}-\d{2}\b',              # MM-DD-YYYY
+        #     r'\b\d{2}/\d{2}/\d{2}\b',              # MM/DD/YYYY
+        #     r'\b\d{2} [a-zA-Z]{3} \d{4}\b',        # DD MMM YYYY
+        #     r'\b[a-zA-Z]{3} \d{1,2}, \d{4}\b',     # MMM DD, YYYY
+        #     r'\b\d{1,2} [a-zA-Z]{3,} \d{4}\b',     # DD Month YYYY
+        #     r'\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\b'  # YYYY-MM-DDTHH:MM:SS
+        # ]
+        # for pattern in date_patterns:
+        #     date_match = re.search(pattern, response.text)
+        #     if date_match:
+        #         publication_date = date_match.group()
+        #         break
         
         # Save the title, publication date, and text content to a file
         full_path=os.path.join(file_path, file_name + '.txt')
         with open(os.path.join(file_path, file_name + '.txt'), 'w', encoding='utf-8') as f:
             f.write(f"Title: {title}\n")
-            if publication_date:
-                f.write(f"Publication Date: {publication_date}\n")
+            if articlePublishedDate:
+                f.write(f"Publication Date: {articlePublishedDate}\n")
             else:
                 f.write("Publication Date not found\n")
             f.write("\n" + text)
-        if publication_date:
-            logger.info("Publication Date: %s", publication_date)
+        if articlePublishedDate:
+            logger.info("Publication Date: %s", articlePublishedDate)
         else:
             logger.warning("Publication Date not found")
     else:
         logger.error("Failed to fetch the webpage: %s", response.status_code)
-    return publication_date, title, text, full_path
+    return articlePublishedDate, title, text, full_path
 
 # @api_view(['GET','POST'])
 @csrf_exempt
@@ -99,9 +99,9 @@ def Fess_Gardian_Post(request):
     if request.method == 'POST':
         collection_name = request.data.get("collectionName")
         link = request.data.get("link")
-        #articlePublishedDate = request.data.get("articlePublishedDate")
+        articlePublishedDate = request.data.get("articlePublishedDate")
         
-        publication_date, title, text, full_path = Fetch_Content(link, collection_name)
+        publication_date, title, text, full_path = Fetch_Content(link, collection_name, articlePublishedDate)
   
         if publication_date and title and text:
             # Normalize the path
@@ -111,11 +111,12 @@ def Fess_Gardian_Post(request):
             
             try:
                 Gardian_rec = {
-                    'artcle_sourceSite':collection_name,
+                    'artcle_sourceSite':"The Guardian",
                     'article_link': link,
                     'article_title': title, 
                     'article_publish_date': publication_date,
-                    'article_file_path': full_path
+                    'article_file_path': full_path,
+                    'category' : []
                 }
                 
                 # Access collection of the database 

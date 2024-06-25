@@ -89,7 +89,7 @@ def Fess_economist_Post(request):
             full_path = os.path.normpath(corrected_path)
             logger.info("Article file path: %s", full_path)
             economist_rec = {
-                'article_sourceSite':collection_name,
+                'article_sourceSite':"Economist",
                 'article_link': link,
                 'article_title': title, 
                 'article_publish_date': publication_date,
