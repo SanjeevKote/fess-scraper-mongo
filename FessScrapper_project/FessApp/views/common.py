@@ -12,6 +12,7 @@ from .sodalitas import fess_sodalitas_post
 from .hbr import Fess_hbr_Post
 from .economist import Fess_economist_Post
 from .sharedvalue import Fess_Sharedvalue_Post
+from .direct_insert import Fess_direct_insertView
 from django.views.decorators.csrf import csrf_exempt
 import logging
 
@@ -30,33 +31,29 @@ def Fess_split_Post(request):
         logger.info('Received POST request with data: %s', request.data)
         
         collection_name = request.data.get("collectionName", "").lower()
+        body = request.data.get("article_content", "").lower()
         link = request.data.get("link")
         
         try:
-            if 'guardian' in collection_name:
-                full_path = Fess_Gardian_Post(request)
-            elif 'deloitte' in collection_name:
-                full_path = Fess_Deloitte_Post(request)
-            elif 'sodalitas' in collection_name:
-                full_path = fess_sodalitas_post(request)
-            elif 'hbr' in collection_name:
-                full_path = Fess_hbr_Post(request)
-            elif 'economist' in collection_name:
-                full_path = Fess_economist_Post(request)
-            elif 'sharedvalue' in collection_name:
-                full_path = Fess_Sharedvalue_Post(request)
+            if not body:
+                if 'guardian' in collection_name:
+                    full_path = Fess_Gardian_Post(request)
+                elif 'deloitte' in collection_name:
+                    full_path = Fess_Deloitte_Post(request)
+                elif 'sodalitas' in collection_name:
+                    full_path = fess_sodalitas_post(request)
+                elif 'hbr' in collection_name:
+                    full_path = Fess_hbr_Post(request)
+                elif 'economist' in collection_name:
+                    full_path = Fess_economist_Post(request)
+                elif 'sharedvalue' in collection_name:
+                    full_path = Fess_Sharedvalue_Post(request)
+                else:
+                    logger.error('Invalid collection name: %s', collection_name)
+                    return Response({"error": "Invalid collection name"}, status=status.HTTP_400_BAD_REQUEST)
             else:
-                logger.error('Invalid collection name: %s', collection_name)
-                return Response({"error": "Invalid collection name"}, status=status.HTTP_400_BAD_REQUEST)
-            
-
-# Example usage
-# container_id = 'your_container_id'
-# source_path = '/path/in/container/file'
-# destination_path = '/path/on/host/file'
-
-            # copy_file_from_container("fess-scrapper-api", full_path, "D:/tmp")
-            #move_file_from_container("fess-scrapper-api", full_path, "D:/tmp")
+                full_path = Fess_direct_insertView(request)
+                
 
             logger.info('Data successfully saved to %s', full_path)
             return Response({

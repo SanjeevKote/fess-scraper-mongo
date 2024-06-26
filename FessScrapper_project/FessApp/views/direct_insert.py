@@ -1,27 +1,27 @@
-from django.shortcuts import render
-
-# Create your views here.
-from rest_framework.decorators import api_view
 from rest_framework.response import Response
 import requests
-from bs4 import BeautifulSoup
 from rest_framework import status
-from datetime import datetime,date
-import re
 import os
 from dotenv import load_dotenv
 from django.db import connection
-from .Filename_generator import generate_filname
 from FessApp.mangodb import db
+from .Filename_generator import generate_filname
 from django.views.decorators.csrf import csrf_exempt
+from datetime import datetime
 import logging
+
 logger = logging.getLogger(__name__)
 
 # Load environment variables from .env file
 load_dotenv()
 
 
-def Fetch_Content(link, collection_name, articlePublishedDate):
+def Fetch_Content(link, collection_name,title, articlePublishedDate,content):
+    converted_date = articlePublishedDate.replace("-", "")
+    file_name, file_path = generate_filname(link, collection_name, converted_date)
+
+    os.makedirs(file_path, exist_ok=True)
+    
     # URL of the webpage you want to read
     url = link
     
@@ -31,67 +31,49 @@ def Fetch_Content(link, collection_name, articlePublishedDate):
     
     # Check if the request was successful (status code 200)
     if response.status_code == 200:
-        # Parse the HTML content
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # Extract the title of the webpage
-        title = soup.title.get_text() if soup.title else "No title found"
-        
-        # Find all <p> tags in the webpage
-        paragraphs = soup.find_all('p')
-        
-        # Extract text from <p> tags
-        wordings = []
-        for paragraph in paragraphs:
-            wordings.append(paragraph.get_text())
-        
-        # Combine the wordings into a single string
-        text = '\n'.join(wordings)
-        converted_date = articlePublishedDate.replace("-", "")
-        file_name, file_path = generate_filname(link, collection_name, converted_date)
-
-        os.makedirs(file_path, exist_ok=True)
         
         # Save the title, publication date, and text content to a file
         full_path = os.path.join(file_path, file_name + '.txt')
 
-        with open(os.path.join(file_path, file_name + '.txt'), 'w', encoding='utf-8') as f:
+        with open(full_path, 'w', encoding='utf-8') as f:
             f.write(f"Title: {title}\n")
-            if articlePublishedDate:
-                f.write(f"Publication Date: {articlePublishedDate}\n")
-            else:
-                f.write("Publication Date not found\n")
-            f.write("\n" + text)
-        if articlePublishedDate:
-            logger.info("Publication Date: %s", articlePublishedDate)
-        else:
-            logger.warning("Publication Date not found")
+            f.write(f"Publication Date: {articlePublishedDate}\n" if articlePublishedDate else "Publication Date not found\n")
+            f.write("\n" + content)
+
     else:
         logger.error("Failed to fetch the webpage: %s", response.status_code)
-    return articlePublishedDate, title, text, full_path
-
+    
+    return articlePublishedDate, title, content, full_path
 
 
 # @api_view(['GET','POST'])
-def Fess_Sharedvalue_Post(request):
+@csrf_exempt
+def Fess_direct_insertView(request):
     """
     List all instances of MyModel.
     """
     if request.method == 'POST':
         collection_name = request.data.get("collectionName")
-        link = request.data.get("link")
-        articlePublishedDate = request.data.get("articlePublishedDate")
-        publication_date, title, text, full_path = Fetch_Content(link, collection_name, articlePublishedDate)
+        link = request.data.get("article_link")
+        title=request.data.get("article_title")
+        articlePublishedDate = request.data.get("article_publish_date")
+        content=request.data.get("article_content")
+        source_site=request.data.get("artcle_sourceSite")
+
+        publication_date, title, content, full_path = Fetch_Content(link, collection_name, title, articlePublishedDate,content)
+        print('publication_date',publication_date)
         date_object = datetime.strptime(publication_date, "%Y-%m-%d")
         publication_date = date_object.strftime("%d %B %Y")
-
-        if articlePublishedDate and title and text:
-            # full_path = full_path.replace("\\\\", "\\")
+       
+        if publication_date and title and content:
+            
+            # Normalize the path
             corrected_path = full_path.replace("\\", "/")
             full_path = os.path.normpath(corrected_path)
             logger.info("Article file path: %s", full_path)
-            SharedValue_rec = {
-                'article_sourceSite':"Shared Value Initiative",
+            
+            Deloitte_rec = {
+                'artcle_sourceSite':source_site,
                 'article_link': link,
                 'article_title': title, 
                 'article_publish_date': publication_date,
@@ -99,13 +81,15 @@ def Fess_Sharedvalue_Post(request):
                 'category' : []
             }
             
+            # Access collection of the database 
             mycollection = db['articles']
-            SharedValue_rec = mycollection.insert_one(SharedValue_rec) 
+            Deloitte_rec = mycollection.insert_one(Deloitte_rec) 
             logger.info("%s data saved successfully", collection_name)
 
             try:
                 # fess_model_instance.save()
                 return full_path
+            
             except Exception as e:
                 return Response(f"Failed to save data: {e}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             finally:
@@ -114,6 +98,3 @@ def Fess_Sharedvalue_Post(request):
 
         else:
             return Response("Failed to fetch content from the provided link", status=status.HTTP_400_BAD_REQUEST)
-
-    
-

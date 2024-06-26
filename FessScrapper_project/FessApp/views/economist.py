@@ -82,6 +82,8 @@ def Fess_economist_Post(request):
         link = request.data.get("link")
         articlePublishedDate = request.data.get('articlePublishedDate')
         publication_date, title, text, full_path = Fetch_Content(link, collection_name, articlePublishedDate)
+        date_object = datetime.strptime(publication_date, "%Y-%m-%d")
+        publication_date = date_object.strftime("%d %B %Y")
        
         if articlePublishedDate and title and text:
             corrected_path = full_path.replace("\\", "/")

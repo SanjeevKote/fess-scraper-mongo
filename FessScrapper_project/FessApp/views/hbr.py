@@ -75,6 +75,8 @@ def Fess_hbr_Post(request):
         articlePublishedDate = request.data.get("articlePublishedDate")
         
         publication_article_Date, title, text, full_path = Fetch_Content(link, collection_name, articlePublishedDate)
+        date_object = datetime.strptime(publication_date, "%Y-%m-%d")
+        publication_date = date_object.strftime("%d %B %Y")
         
         if publication_article_Date and title and text:
             # Normalize the path

@@ -76,13 +76,14 @@ def fess_sodalitas_post(request):
         collection_name = request.data.get("collectionName")
         link = request.data.get("link")
         publication_date = request.data.get("articlePublishedDate")
-        print(publication_date)
         
         if not collection_name or not link:
             return Response({"error": "collectionName and link are required"}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
             publication_date, title, text, full_path = fetch_content(link, collection_name, publication_date)
+            date_object = datetime.strptime(publication_date, "%Y-%m-%d")
+            publication_date = date_object.strftime("%d %B %Y")     
             
             if publication_date and title and text and full_path:
                 corrected_path = full_path.replace("\\", "/")
