@@ -95,7 +95,8 @@ def Fess_economist_Post(request):
                 'article_link': link,
                 'article_title': title, 
                 'article_publish_date': publication_date,
-                'article_file_path': full_path
+                'article_file_path': full_path,
+                'category' : []
             }
             # Access collection of the database 
             mycollection = db['articles']
