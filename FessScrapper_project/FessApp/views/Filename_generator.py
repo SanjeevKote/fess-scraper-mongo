@@ -3,8 +3,8 @@ from datetime import datetime
 import os
 
 def generate_filname(link, collection_name, publication_date):
-    parsed_url = urlparse(link)
-    path_parts = parsed_url.path.split('/')
+    #parsed_url = urlparse(link)
+    #path_parts = parsed_url.path.split('/')
 
     # Get the current date and time
     now = datetime.now()

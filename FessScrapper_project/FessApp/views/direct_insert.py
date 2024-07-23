@@ -23,25 +23,25 @@ def Fetch_Content(link, collection_name,title, articlePublishedDate,content):
     os.makedirs(file_path, exist_ok=True)
     
     # URL of the webpage you want to read
-    url = link
+    # url = link
     
     # Send a GET request to the URL
-    response = requests.get(url)
-    logger.info("Article link: %s", url)
+    # response = requests.get(url)
+    # logger.info("Article link: %s", url)
     
     # Check if the request was successful (status code 200)
-    if response.status_code == 200:
+    # if response.status_code == 200:
         
         # Save the title, publication date, and text content to a file
-        full_path = os.path.join(file_path, file_name + '.txt')
+    full_path = os.path.join(file_path, file_name + '.txt')
 
-        with open(full_path, 'w', encoding='utf-8') as f:
-            f.write(f"Title: {title}\n")
-            f.write(f"Publication Date: {articlePublishedDate}\n" if articlePublishedDate else "Publication Date not found\n")
-            f.write("\n" + content)
+    with open(full_path, 'w', encoding='utf-8') as f:
+        f.write(f"Title: {title}\n")
+        f.write(f"Publication Date: {articlePublishedDate}\n" if articlePublishedDate else "Publication Date not found\n")
+        f.write("\n" + content)
 
-    else:
-        logger.error("Failed to fetch the webpage: %s", response.status_code)
+    # else:
+    #     logger.error("Failed to fetch the webpage: %s", response.status_code)
     
     return articlePublishedDate, title, content, full_path
 
@@ -58,7 +58,7 @@ def Fess_direct_insertView(request):
         title=request.data.get("article_title")
         articlePublishedDate = request.data.get("article_publish_date")
         content=request.data.get("article_content")
-        source_site=request.data.get("artcle_sourceSite")
+        source_site=request.data.get("article_sourceSite")
 
         publication_date, title, content, full_path = Fetch_Content(link, collection_name, title, articlePublishedDate,content)
         print('publication_date',publication_date)
@@ -73,7 +73,7 @@ def Fess_direct_insertView(request):
             logger.info("Article file path: %s", full_path)
             
             Deloitte_rec = {
-                'artcle_sourceSite':source_site,
+                'article_sourceSite':source_site,
                 'article_link': link,
                 'article_title': title, 
                 'article_publish_date': publication_date,

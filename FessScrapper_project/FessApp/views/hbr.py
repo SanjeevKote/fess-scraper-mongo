@@ -74,11 +74,11 @@ def Fess_hbr_Post(request):
         link = request.data.get("link")
         articlePublishedDate = request.data.get("articlePublishedDate")
         
-        publication_article_Date, title, text, full_path = Fetch_Content(link, collection_name, articlePublishedDate)
+        publication_date, title, text, full_path = Fetch_Content(link, collection_name, articlePublishedDate)
         date_object = datetime.strptime(publication_date, "%Y-%m-%d")
         publication_date = date_object.strftime("%d %B %Y")
         
-        if publication_article_Date and title and text:
+        if publication_date and title and text:
             # Normalize the path
             corrected_path = full_path.replace("\\", "/")
             full_path = os.path.normpath(corrected_path)
@@ -89,7 +89,7 @@ def Fess_hbr_Post(request):
                     'article_sourceSite':"Harvard Business Review",
                     'article_link': link,
                     'article_title': title, 
-                    'article_publish_date': publication_article_Date,
+                    'article_publish_date': publication_date,
                     'article_file_path': full_path,
                     'category' : []
                 }
