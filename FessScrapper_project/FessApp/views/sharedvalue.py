@@ -90,20 +90,20 @@ def Fess_Sharedvalue_Post(request):
             corrected_path = full_path.replace("\\", "/")
             full_path = os.path.normpath(corrected_path)
             logger.info("Article file path: %s", full_path)
-            SharedValue_rec = {
-                'article_sourceSite':"Shared Value Initiative",
-                'article_link': link,
-                'article_title': title, 
-                'article_publish_date': publication_date,
-                'article_file_path': full_path,
-                'category' : []
-            }
-            
-            mycollection = db['articles']
-            SharedValue_rec = mycollection.insert_one(SharedValue_rec) 
-            logger.info("%s data saved successfully", collection_name)
-
             try:
+                SharedValue_rec = {
+                    'article_sourceSite':"Shared Value Initiative",
+                    'article_link': link,
+                    'article_title': title, 
+                    'article_publish_date': publication_date,
+                    'article_file_path': full_path,
+                    'category' : []
+                }
+                
+                mycollection = db['articles']
+                SharedValue_rec = mycollection.insert_one(SharedValue_rec) 
+                logger.info("%s data saved successfully", collection_name)
+
                 # fess_model_instance.save()
                 return full_path
             except Exception as e:

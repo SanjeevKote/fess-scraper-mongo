@@ -88,22 +88,23 @@ def Fess_economist_Post(request):
         if articlePublishedDate and title and text:
             corrected_path = full_path.replace("\\", "/")
             # Normalize the path
+            
             full_path = os.path.normpath(corrected_path)
             logger.info("Article file path: %s", full_path)
-            economist_rec = {
-                'article_sourceSite':"Economist",
-                'article_link': link,
-                'article_title': title, 
-                'article_publish_date': publication_date,
-                'article_file_path': full_path,
-                'category' : []
-            }
-            # Access collection of the database 
-            mycollection = db['articles']
-            economist_rec = mycollection.insert_one(economist_rec) 
-            logger.info("%s data saved successfully", collection_name)
-
             try:
+                economist_rec = {
+                    'article_sourceSite':"Economist",
+                    'article_link': link,
+                    'article_title': title, 
+                    'article_publish_date': publication_date,
+                    'article_file_path': full_path,
+                    'category' : []
+                }
+                # Access collection of the database 
+                mycollection = db['articles']
+                economist_rec = mycollection.insert_one(economist_rec) 
+                logger.info("%s data saved successfully", collection_name)
+
                 # fess_model_instance.save()
                 return full_path
             except Exception as e:

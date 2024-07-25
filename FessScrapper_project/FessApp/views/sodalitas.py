@@ -80,16 +80,16 @@ def fess_sodalitas_post(request):
         if not collection_name or not link:
             return Response({"error": "collectionName and link are required"}, status=status.HTTP_400_BAD_REQUEST)
         
-        try:
-            publication_date, title, text, full_path = fetch_content(link, collection_name, publication_date)
-            date_object = datetime.strptime(publication_date, "%Y-%m-%d")
-            publication_date = date_object.strftime("%d %B %Y")     
-            
-            if publication_date and title and text and full_path:
-                corrected_path = full_path.replace("\\", "/")
-                full_path = os.path.normpath(corrected_path)
-                logger.info("Article file path: %s", full_path)
-                
+       
+        publication_date, title, text, full_path = fetch_content(link, collection_name, publication_date)
+        date_object = datetime.strptime(publication_date, "%Y-%m-%d")
+        publication_date = date_object.strftime("%d %B %Y")     
+        
+        if publication_date and title and text and full_path:
+            corrected_path = full_path.replace("\\", "/")
+            full_path = os.path.normpath(corrected_path)
+            logger.info("Article file path: %s", full_path)
+            try:    
                 sodalitas_rec = {
                     'article_sourceSite':"Fondazione Sodalitas",
                     'article_link': link,
@@ -104,15 +104,12 @@ def fess_sodalitas_post(request):
                 logger.info("%s data saved successfully", collection_name)
                 
                 return full_path
-            else:
-                return Response({"error": "Failed to fetch content from the provided link"}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                return Response(f"Failed to save data: {e}", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            finally:
+                if connection is not None and not connection.is_usable():
+                    connection.close()
+        else:
+            return Response({"error": "Failed to fetch content from the provided link"}, status=status.HTTP_400_BAD_REQUEST)
+    
         
-        except Exception as e:
-            logger.error("Error saving data: %s", str(e), exc_info=True)
-            return Response({"error": "Failed to save data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-        finally:
-            if connection is not None and not connection.is_usable():
-                connection.close()
-    else:
-        return Response({"error": "Invalid request method"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

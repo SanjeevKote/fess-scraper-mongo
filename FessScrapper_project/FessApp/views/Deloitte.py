@@ -77,25 +77,26 @@ def Fess_Deloitte_Post(request):
        
         if publication_date and title and text:
             # Normalize the path
+           
             corrected_path = full_path.replace("\\", "/")
             full_path = os.path.normpath(corrected_path)
             logger.info("Article file path: %s", full_path)
-            
-            Deloitte_rec = {
-                'artcle_sourceSite':"Deloitte",
-                'article_link': link,
-                'article_title': title, 
-                'article_publish_date': publication_date,
-                'article_file_path': full_path,
-                'category' : []
-            }
-            
-            # Access collection of the database 
-            mycollection = db['articles']
-            Deloitte_rec = mycollection.insert_one(Deloitte_rec) 
-            logger.info("%s data saved successfully", collection_name)
+            try:    
+                Deloitte_rec = {
+                    'artcle_sourceSite':"Deloitte",
+                    'article_link': link,
+                    'article_title': title, 
+                    'article_publish_date': publication_date,
+                    'article_file_path': full_path,
+                    'category' : []
+                }
+                
+                # Access collection of the database 
+                mycollection = db['articles']
+                Deloitte_rec = mycollection.insert_one(Deloitte_rec) 
+                logger.info("%s data saved successfully", collection_name)
 
-            try:
+      
                 # fess_model_instance.save()
                 return full_path
             
