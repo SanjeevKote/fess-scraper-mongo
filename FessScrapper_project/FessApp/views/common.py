@@ -14,6 +14,7 @@ from .direct_insert import Fess_direct_insertView
 from django.views.decorators.csrf import csrf_exempt
 import logging
 from concurrent.futures import ThreadPoolExecutor
+import time
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -53,16 +54,23 @@ def Fess_split_Post(request):
                     raise ValueError("Invalid collection name")
             else:
                 return Fess_direct_insertView(request)
-                
-        try:
-            future = executor.submit(handle_request)
-            full_path = future.result()  # Wait for the thread to complete and get the result
 
-            logger.info('Data successfully saved to %s', full_path)
-            return Response({"message": "Data successfully saved", "file_path": full_path}, status=status.HTTP_201_CREATED)
-        
-        except Exception as e:
-            logger.error('Error processing request: %s', str(e), exc_info=True)
-            return Response({"error": "Internal server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        max_retries = 3
+        retry_delay = 2  # Delay between retries in seconds
+
+        for attempt in range(max_retries):
+            try:
+                future = executor.submit(handle_request)
+                full_path = future.result()  # Wait for the thread to complete and get the result
+
+                logger.info('Data successfully saved to %s', full_path)
+                return Response({"message": "Data successfully saved", "file_path": full_path}, status=status.HTTP_201_CREATED)
+
+            except Exception as e:
+                logger.error('Attempt %d: Error processing request: %s', attempt + 1, str(e), exc_info=True)
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)  # Wait before retrying
+
+        return Response({"error": "Internal server error after retries"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return Response({"error": "Invalid request method"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
