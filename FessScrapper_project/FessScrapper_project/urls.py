@@ -24,5 +24,5 @@ urlpatterns = [
     # # path('myfess/deloitte/',Deloitte.Fess_Deloitte_Post,name='Deloitte'),
     # # path('myfess/sodalitas/',sodalitas.Fess_Sodalitas_Post,name='sodalitas'),
     # # path('myfess/hbr/',hbr.Fess_hbr_Post,name='hrbr'),
-    path('myfess/',common.Fess_split_Post,name='fess')
+    path('crawler/',common.Fess_split_Post,name='fess')
 ]

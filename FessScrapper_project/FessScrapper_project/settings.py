@@ -212,6 +212,11 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True,
         },
+        'FessApp.views.common': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
     },
 }
 
